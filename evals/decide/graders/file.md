@@ -1,6 +1,5 @@
 ---
 type: file_exists
-path: Decisions
-exists: true
+path: "Decisions/*.md"
 weight: 1
 ---

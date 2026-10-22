@@ -2,3 +2,5 @@ node_modules/
 .DS_Store
 tests/fixtures/brain/.git/
 evals/results/
+evals/results-latest.json
+evals/results-latest.err

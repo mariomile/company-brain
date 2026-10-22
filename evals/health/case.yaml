@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: health-reports-not-fixes
+description: A health request runs the script and reports; it does not delete or rewrite content.
+tags: [maintain]
+context:
+  scaffold_script: fixture.sh

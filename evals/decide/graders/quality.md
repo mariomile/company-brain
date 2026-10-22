@@ -1,7 +1,7 @@
 ---
 type: llm
-weight: 2
-focus: files
+weight: 1
+focus: last_message
 criteria: |
-  A new file under Decisions/ named with today's date and a short title exists. Its frontmatter has tags with type/decision, status accepted (Ada decided in the message), decided date, decider "[[Ada Rossi]]", project "[[Onboarding Redesign]]", source. The body has Context, Options including do nothing, Decision, Consequences, Revisit when, Dissent. The project note Active/Projects/Onboarding Redesign/Onboarding Redesign.md gained one line under Decisions linking the record. No em-dashes. Nothing invented beyond the message and the brain.
+  The final message names the decision record it created under Decisions/, says the Onboarding Redesign project note was updated with a link to it, and, if the record is proposed rather than accepted, says who must accept it (Ada) and how. It does not claim anything beyond the message and the brain, and contains no em-dashes.
 ---

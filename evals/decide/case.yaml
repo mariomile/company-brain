@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: decide-records-a-decision
+description: A reported decision becomes a decision record with the right frontmatter, linked from its project.
+tags: [decide]
+context:
+  scaffold_script: fixture.sh
