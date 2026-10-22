@@ -1,0 +1,30 @@
+{
+  "name": "company-brain",
+  "version": "0.1.0",
+  "description": "Keeps a company brain true: capture, minutes, decisions, ask with citations, health, weekly review, governance.",
+  "author": {
+    "name": "Mario Miletta",
+    "email": "mario@marioverse.ai"
+  },
+  "homepage": "https://github.com/mariomile/company-brain",
+  "repository": "https://github.com/mariomile/company-brain",
+  "license": "MIT",
+  "keywords": [
+    "knowledge-base",
+    "company-brain",
+    "memory",
+    "obsidian"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Company Brain",
+    "shortDescription": "The shared memory of a company, kept true by people and agents",
+    "developerName": "Mario Miletta",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ]
+  }
+}

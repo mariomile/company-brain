@@ -1,0 +1,23 @@
+{
+  "name": "company-brain",
+  "displayName": "Company Brain",
+  "description": "The shared memory of a company, kept true by people and agents: capture, minutes, decisions, ask with citations, health checks, weekly review, governance with owners and review dates. Works on any Markdown brain built from the company-brain template.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Mario Miletta",
+    "email": "mario@marioverse.ai",
+    "url": "https://marioverse.ai"
+  },
+  "homepage": "https://github.com/mariomile/company-brain",
+  "repository": "https://github.com/mariomile/company-brain",
+  "license": "MIT",
+  "keywords": [
+    "knowledge-base",
+    "company-brain",
+    "second-brain",
+    "memory",
+    "obsidian",
+    "decisions",
+    "governance"
+  ]
+}

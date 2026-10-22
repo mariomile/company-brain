@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# SessionStart hook for the company-brain plugin. Emits one JSON object with additionalContext.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Only speak when the working directory is a company brain.
+if [ ! -f "_system/brain.config.json" ] || [ ! -f "AGENTS.md" ]; then
+  exit 0
+fi
+
+hub_content=$(cat "${PLUGIN_ROOT}/skills/using-company-brain/SKILL.md")
+
+shell_quote() { printf '%q' "$1"; }
+
+escape_for_json() {
+  local s="$1" char escaped i
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  for ((i=1; i<32; i++)); do
+    printf -v char '%b' "\\$(printf '%03o' "$i")"
+    printf -v escaped '\\u%04x' "$i"
+    s="${s//"$char"/$escaped}"
+  done
+  printf '%s' "$s"
+}
+
+session_context="You are inside a company brain (built from the company-brain template). The company-brain plugin is installed.
+
+**Plugin installation root:** ${PLUGIN_ROOT}
+Resolve skills/, references/ and scripts/ from this root, never from the brain. Run the script from the brain root so reports and logs land there. Skills and agents are namespaced company-brain:.
+
+**The using-company-brain skill is already loaded below.** Apply it within the user's request and existing authorization; load other skills as needed:
+
+${hub_content}"
+
+if command -v node >/dev/null 2>&1; then
+  script_command="node $(shell_quote "${PLUGIN_ROOT}/scripts/brain.mjs")"
+  session_context+="
+
+**Brain script:** \`${script_command}\`. Subcommands: brief, health [--json] [--strict], stale, links, orphans, tags, ratio, index, new <type> \"Title\", verify <note>, log <op> <title>, run <automation>, search <query>, guard, lint-file."
+  if brief_out=$(node "${PLUGIN_ROOT}/scripts/brain.mjs" brief 2>&1); then
+    session_context+="
+
+**Brain briefing:**
+
+${brief_out}"
+  else
+    session_context+="
+
+**Brain briefing unavailable:** ${brief_out}
+Read _system/agent/NOW.md and _system/memory/open-loops.md before working; do not infer state from a failed briefing."
+  fi
+fi
+
+context_json=$(escape_for_json "$session_context")
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{"additional_context":"%s"}\n' "$context_json"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -z "${COPILOT_CLI:-}" ]; then
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context_json"
+else
+  printf '{"additionalContext":"%s"}\n' "$context_json"
+fi

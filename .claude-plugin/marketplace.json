@@ -1,0 +1,24 @@
+{
+  "name": "company-brain",
+  "description": "Company Brain by Mario Miletta: the plugin that keeps a company's shared Markdown memory true.",
+  "owner": {
+    "name": "Mario Miletta",
+    "email": "mario@marioverse.ai",
+    "url": "https://marioverse.ai"
+  },
+  "plugins": [
+    {
+      "name": "company-brain",
+      "source": "./",
+      "description": "Capture, minutes, decisions, ask with citations, health checks, weekly review and governance for a company brain built from the template.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": [
+        "knowledge-base",
+        "memory",
+        "obsidian",
+        "decisions"
+      ]
+    }
+  ]
+}
