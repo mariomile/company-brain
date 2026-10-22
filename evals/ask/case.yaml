@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: ask-samples-are-not-facts
+description: In a fresh brain whose only content is the template's samples, a question is answered as a gap, not with the fictional company's facts, and the question is logged.
+tags: [ask]
+context:
+  scaffold_script: fixture.sh

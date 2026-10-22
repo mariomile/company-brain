@@ -10,7 +10,8 @@ Skills never name a tool. They name a capability and resolve it against what the
 | `meetings.read` | read transcripts and meeting notes | a synced folder in `Input/Meetings/`, Granola, Gong, Fireflies, a calendar tool |
 | `mail.read` / `chat.read` / `tickets.read` | read threads to summarize into `Input/Conversations/` | mail, chat and ticket connectors |
 | `calendar.read` | today's meetings for the brief | calendar connectors |
-| `docs.read` | fetch an external document to ingest | drive connectors, `web.fetch` |
+| `docs.read` | fetch an external document to ingest | drive and wiki connectors (Google Drive, Notion), `web.fetch` |
+| `chat.history` | pull new messages from the channels listed in `_system/sources.md` | chat connectors (Slack, Teams) |
 | `web.search` / `web.fetch` | external facts for `ask` and `capture` | any web tool |
 | `analytics.query` | a number with a source for a living document or a goal | analytics and database connectors |
 | `subagent.dispatch` | delegate to a `company-brain:*` agent | Claude Code and hosts that expose agents; otherwise run inline |
@@ -31,6 +32,6 @@ Skills never name a tool. They name a capability and resolve it against what the
 | `meetings.read` | synced folder | connector | the user pastes the transcript |
 | `calendar.read` | connector | the daily note's Notes | say "no calendar connected" |
 | `analytics.query` | live query | a number already in the brain, dated | ask, tag `[source: chat YYYY-MM-DD]` |
-| `web.search` | live | — | skip, name the gap |
-| `subagent.dispatch` | delegate | run the same skill inline | — |
-| `scheduler.run` | Exo or routines | `brain run <automation>` piped into `claude -p` | run by hand on request |
+| `web.search` | live | none | skip, name the gap |
+| `subagent.dispatch` | delegate | run the same skill inline | n/a |
+| `scheduler.run` | the template's GitHub workflow, Exo or routines | `brain run <automation>` piped into `claude -p` | run by hand on request |

@@ -1,45 +1,56 @@
 ---
 name: ask
-description: "Use for any question about the company, its product, customers, decisions, people or history: 'what do we know about', 'what did we decide', 'where were we with', 'who owns'. Answers from the brain first with citations, names the gaps, and files answers worth keeping."
+description: "Use for any question about the company, its product, customers, decisions, people or history: 'what do we know about', 'what did we decide', 'where were we with', 'who owns'. Answers from the brain first with citations, names the gaps, logs the question with its result, and files answers worth keeping."
 argument-hint: "[question]"
 ---
 
 # Ask
 
-Answer first, sources always, gaps named. The brain outranks the web; a living document outranks minutes; newer verified beats older. Never fill a gap with something plausible.
+Answer first, sources always, gaps named. Never fill a gap with something plausible. The order of sources, how to cite and how to resolve conflicts are in the brain's `_system/memory/rules/rule-research.md`: follow it. This skill adds where to look and what to do after.
 
-Apply `_system/memory/rules/rule-research.md` if present; this skill is its portable form.
+## 1. Look in the brain
 
-## 1. Look in the brain, in this order
+1. `brain search "<terms>"`, then follow wikilinks from the top hits.
+2. "Why": `Decisions/`, through `_system/indices/decisions-index.md`. Skip `superseded` records unless the history is the question.
+3. "Where were we": the project note's `## Now` and `## Timeline`, then the last minutes.
+4. A person or a company: its CRM note, `## Now` first.
+5. A term: `Knowledge/Company/Glossary.md`.
 
-1. `brain search "<terms>"`: titles, aliases, tags, then content, weighted toward living documents and decisions. Then follow wikilinks from the top hits.
-2. For "why": `Decisions/` (the index `_system/indices/decisions-index.md` first).
-3. For "where were we": the project note's `## Now` and `## Timeline`, then the last minutes.
-4. For a person or company: its CRM note, `## Now` first.
-5. For a term: `Knowledge/Company/Glossary.md`.
+For every note you use, note `confidentiality` and `review_due`. A stale note is still a source: say it is stale and whose it is.
 
-Note the `confidentiality` and the `review_due` of every note you use. A stale note is still a source: say it is stale.
+**Sample notes are not facts.** A note with `sample: true` belongs to the template's fictional company. Never cite it as this company's knowledge; if it is the only hit, the answer is a gap.
 
-## 2. Then connected sources, then the web
+## 2. Beyond the brain
 
-Only if the brain does not answer, only the sources this session exposes (mail, chat, tickets, meeting tools, analytics). For external facts: the web, recent and authoritative. Never a product the user should install; name the capability gap instead.
+Only if the brain does not answer: the connected sources this session exposes, then the web, as `rule-research.md` orders them. Never suggest installing a product; name the missing capability instead.
 
-## 3. Resolve conflicts
+## 3. Answer
 
-Two sources disagree: show both. The one that wins is the more specific, the more recently verified, or the more authoritative (a decision record beats a chat; the owner's living document beats a teammate's note). Write the conflict as a dated line into the more canonical note.
+- One to three lines, then the details as bullets, every claim with its source.
+- Conflicts: both sources, which wins and why, and the conflict written as a dated line in the more canonical note.
+- `confidential`: summarize, never quote, if the output leaves the brain. `restricted`: only to its `audience:` (`rule-confidentiality.md`).
+- **Gaps:** what the brain does not know, what is stale and whose, what came from outside only.
 
-## 4. Answer
+## 4. Log the question
 
-- The answer in one to three lines. Then the details, as bullets.
-- Every claim with its source: `[[note]]`, "email from X on DD/MM", "ticket #N", URL.
-- `confidential` material: summarize, never quote, if the output leaves the brain (`rule-confidentiality.md`). `restricted`: only to its `audience:`.
-- **Gaps**: what the brain does not know on this question, what is stale and whose it is, what came from the web only.
+`brain log ask "<question as asked>" --result <result>`:
+
+| Result | When |
+|---|---|
+| `answered` | the brain answered, with sources, nothing stale |
+| `partial` | part of it from the brain, the rest from outside or missing |
+| `gap` | the brain had nothing usable |
+| `stale` | the answer rests on a note past `review_due` |
+
+The log is how `brain metrics` counts the answer rate and the questions asked twice.
 
 ## 5. File what is worth keeping
 
-- The question needed external sources and will come back: save the material in `Input/Research/` and, if it is a distilled concept, propose a note in `Knowledge/<Domain>/` (`company-brain:promote`).
-- A decision or commitment surfaced that is not recorded: offer to record it.
+- Needed outside sources and will come back: the material to `Input/Research/`; a distilled concept proposed through `company-brain:promote`.
+- A decision or commitment surfaced and is not recorded: offer `company-brain:decide` or an open loop.
 - A gap that matters: an open loop with an owner.
-- Count the question: if the same question returns three times, the answer belongs in a living document or the Glossary; propose it.
+- Asked before (it shows in `brain metrics`): propose the section of a living document or the Glossary row where the answer should live.
 
-Never create files in a delegated run (`brain-analyst`) unless asked; return the proposals.
+## Output
+
+The answer, its sources, **Gaps**, then any `📄 **Created:**` links and proposals. If you wrote anything: `brain sync "ask: <topic>"`. In a delegated run, create no files unless asked: return the proposals.

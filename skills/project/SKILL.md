@@ -15,7 +15,7 @@ Load `company-brain:conventions`. Living-document rules apply (`rule-living-docu
 1. `brain new project "Name" --owner "[[Person]]" --domain <domain>`: creates the folder, the note from `_system/templates/Project.md`, the log line.
 2. Fill: the one-sentence outcome, **why it matters**, **success looks like** with a measurable condition and its baseline (with source; `to verify` if none), owner, team, stakeholders, the first tasks.
 3. Add the project to `_system/agent/NOW.md` only if it is a current priority: propose the line to the NOW owner.
-4. `brain index --write` or let the librarian do it Monday.
+4. `brain index --write`, or let the `librarian` automation do it Monday.
 
 ## Update
 
@@ -34,8 +34,14 @@ Answer from the note: `## Now`, open tasks, last Timeline entry, decisions, loop
 
 - Pause: `status: paused`, a Timeline line with the reason. Stays in `Active/`.
 - Done: `status: done`, the outcome versus "success looks like" in `## Now` with the measured number and source, a Timeline line. The weekly review proposes archiving after 30 days.
-- Archive: move the whole folder to `.archive/Active/Projects/<Name>/`. Never delete. Update `NOW.md` by proposal, `brain index --write`.
+- Archive: `git mv "Active/Projects/<Name>" ".archive/Active/Projects/<Name>"`. Never delete, never edit inside `.archive/`. Update `NOW.md` by proposal, `brain index --write`.
 
 ## Subfolders
 
 Free inside the project folder: specs, research, drafts. They need no decision. Deliverables carry `#type/output`.
+
+## Output
+
+1. `📄 **Created:**` links first, then the lines changed in `## Now`, Timeline, Tasks.
+2. Proposals (NOW.md, a living document) with their owner.
+3. `brain log project "<name>: <what>"`, then `brain sync "project: <name>"`.

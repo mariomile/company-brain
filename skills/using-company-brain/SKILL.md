@@ -1,57 +1,49 @@
 ---
 name: using-company-brain
-description: "Use at the start of any work inside a company brain: it says what to load, how to route a request to the right brain skill, and what to watch for while working (stale documents, missing decisions, confidentiality)."
+description: "Use at the start of any work inside a company brain: what to load, which brain skill a request goes to, what to watch for while working, and how to write back."
 ---
 
 # Using the Company Brain
 
-A company brain is a Markdown repository built from the company-brain template: ten folders, living documents with owners and review dates, a decision log, a CRM, and an agent layer in `_system/`. The contract every agent follows is the brain's own `AGENTS.md`. This skill routes; the brain's files decide.
+The brain's own `AGENTS.md` is the contract. This skill routes; the brain's files decide.
 
-## Boot (cold, nothing injected)
+**Boot (cold, nothing injected):** `AGENTS.md`; `_system/agent/SOUL.md`, `ORG.md`, `NOW.md`; `_system/memory/rules/_index.md` (open a rule only when its trigger matches); on a scheduled run, your file in `_system/automations/`; the project note you work on. With the session-start briefing, skip what it already gave you.
 
-1. `AGENTS.md` at the brain root (the contract and the memory routing table).
-2. `_system/agent/SOUL.md`, `ORG.md`, `NOW.md`.
-3. `_system/memory/rules/_index.md`: the index only. Open a rule body when its trigger matches.
-4. The project note of the project you work on: `Active/Projects/<Name>/<Name>.md`.
-5. `_system/memory/open-loops.md`: the loops that touch your topic.
+## Route
 
-With the session-start hook, items 1 to 3 are summarized in the briefing: do not re-read them. `brain brief` prints the same briefing on demand.
-
-## Route by what is asked
-
-| Request | Skill |
+| People say | Skill |
 |---|---|
-| "what do we know / what did we decide / where were we with X" | `company-brain:ask` |
-| a document, link, thread, transcript, file in `_inbox/`, "save this", "triage" | `company-brain:capture` |
-| "minutes", "recap the call", a meeting transcript | `company-brain:meeting` |
-| "we decided", "record the decision", "let's go with" | `company-brain:decide` |
-| a project's state, next step, "update the project", a new project | `company-brain:project` |
-| a person, a customer, a partner, "who is", "add to the CRM" | `company-brain:people` |
-| "promote", "this keeps coming up", a domain over 50 notes, a term used everywhere | `company-brain:promote` |
-| "health", "broken links", "orphans", "what is stale", "clean up" | `company-brain:maintain` |
-| "weekly review", "what did the brain learn", Friday | `company-brain:review` |
-| "brief", "what is on today", Monday morning | `company-brain:brief` |
-| "verify", a living document is due, "is this still true" | `company-brain:governance` (verify flow) |
-| owners, review dates, confidentiality, PR, autonomy of an automation, a structure change | `company-brain:governance` |
-| first session, placeholders in the brain, a new teammate, "onboard" | `company-brain:onboard` |
-| any writing in the brain | `company-brain:conventions` alongside the skill above |
+| "what do we know", "what did we decide", "where were we with X" | `ask` |
+| a document, link, thread, file in `_inbox/`, "save this", "triage the inbox" | `capture` |
+| "pull from Slack / Drive / Notion / the recorder", "import this export" | `ingest` |
+| "minutes", "recap the call", a transcript | `meeting` |
+| "we decided", "record the decision", "let's go with" | `decide` |
+| a project's state, next step, a new project | `project` |
+| "who is", a customer, a partner, "add to the CRM" | `people` |
+| "this keeps coming up", a term used everywhere | `promote` |
+| "health", "check the brain", "broken links", "clean up" | `maintain` |
+| "verify X", "is this still true", owners, autonomy, a structure change | `governance` |
+| "brief", "what is on today" | `brief` |
+| "weekly review", "what did the brain learn" | `review` |
+| first session, `{{placeholders}}`, "onboard", a new teammate | `onboard` |
+| any writing | `conventions`, alongside |
 
-A plain question that the brain answers in one lookup needs no skill ceremony: look it up, cite, answer.
+Skills are `company-brain:<name>`. A one-lookup question needs no ceremony: look up, cite, answer, log.
 
-## Watch while working
+## Watch (two lines at most, never block)
 
-Check every request against the brain before doing the work, say what you find in at most two lines, then continue. Never block on these; never repeat one the person already answered in this session.
-
-- **Stale ground.** The answer rests on a living document past `review_due` or a `NOW.md` past its review. Say so and name the owner.
-- **Missing why.** The request changes what the company does and no decision record exists. Offer to record one (`decide`) after the work, not instead of it.
-- **Contradiction.** Two notes disagree. Show both, say which wins (specificity, verification date, authority), write the conflict into the more canonical note as a dated line.
-- **Confidentiality.** The output leaves the brain and draws on `confidential` or `restricted` notes. Apply `rule-confidentiality.md` before producing it.
-- **Placeholders.** The brain still has `{{placeholders}}`: the instance was never filled. Point to `onboard`.
+- **Stale:** the answer rests on a living document past `review_due`: say so, name the owner.
+- **Missing why:** the work changes what the company does and no decision exists: offer `decide` after.
+- **Contradiction:** show both notes, say which wins, write the conflict as a dated line in the more canonical one.
+- **Confidential:** an output leaves the brain and draws on `confidential` or `restricted` notes: apply `rule-confidentiality.md`.
+- **Samples are not facts:** `sample: true` notes belong to the fictional Lumen Analytics. Never cite them as this company's.
 
 ## Writing back
 
-Every useful piece of work leaves the brain richer, in the same turn, in the canonical note (the routing table in `AGENTS.md` says where). Small, dated, sourced additions need no permission. Living documents get proposals, not rewrites (`rule-living-documents.md`). Then one line in `_system/log.md` (`brain log <op> "title"`).
+1. Shared brain (git remote): `brain sync --pull` once, before the first write of the session.
+2. Write in the same turn, in the canonical note (`AGENTS.md`, "Memory: where things go"). Small dated sourced additions: no permission. Living documents, policies, playbooks: a proposal or a pull request, never a rewrite.
+3. Never edit read-only folders (`readonly` in `_system/brain.config.json`) or `.archive/`.
+4. Answered a question from the brain: `brain log ask "<question>" --result answered|partial|gap|stale`.
+5. After writing: `brain sync "<what changed>"`.
 
-## Precedence
-
-Current request > canonical notes (living documents, decisions, CRM, project notes) > specialist contract > runtime memory. Newer `last_verified` beats older. The conversation beats recalled memory.
+Precedence: current request > canonical notes > automation file > runtime memory.

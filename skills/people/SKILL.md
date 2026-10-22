@@ -12,7 +12,7 @@ Load `company-brain:conventions`. `rule-confidentiality.md` applies: **work cont
 
 ## Create
 
-- `brain new person "Full Name" --company "[[Org]]" --relationship customer` or `brain new company "Org" --owner "[[Account owner]]" --relationship customer`.
+- `brain new person "Full Name" --company "Org"` or `brain new company "Org" --owner "Account owner"`, then set the `crm/*` tag to the relationship (`team`, `customer`, `prospect`, `partner`, `investor`, `advisor`, `vendor`, `competitor`, `other`).
 - Person: `role`, `company`, `works_at`, `reports_to` (team), `email`, `linkedin`, `location`, `last_contact` and `owner` (external people: who holds the relationship).
 - Company: `industry`, `stage` (`prospect · customer · churned · partner · competitor`), `website`, `location`, `owner`, `customer_of` / `partner_of` / `competitor_of` / `backed_by`, `since`.
 - Reciprocity, best effort: `reports_to` on the person → `manages` on the manager; `customer_of` on the company → nothing on ours (the "All notes about" base finds it).
@@ -23,7 +23,7 @@ Load `company-brain:conventions`. `rule-confidentiality.md` applies: **work cont
 - `## Now`: who they are for us, what they care about, what is open. Replace lines, dated.
 - `## Timeline`: one line per interaction, newest first: date, channel, what happened, link to the minutes or conversation.
 - `last_contact` on external people when an interaction is logged.
-- Facts learned in passing (a new role, a move): UPDATE with the dated trace.
+- Facts learned in passing (a new role, a renewal date, what they asked for): one fact line each, `- <fact> [source: <note or "chat YYYY-MM-DD">; since: YYYY-MM-DD]`; a changed fact keeps its line with the dated trace.
 
 ## Never
 
@@ -37,4 +37,10 @@ From the note: `## Now`, role and company, the owner of the relationship, the la
 
 ## Leaving the company
 
-A teammate who leaves: `crm/team` becomes `crm/other` (or `crm/advisor`), `works_at` updated with the dated trace, and **every living document they own gets a new owner** (`company-brain:governance`). `brain stale` will list the documents with the old owner.
+A teammate who leaves: `crm/team` becomes `crm/other` (or `crm/advisor`), `works_at` updated with the dated trace, and **every living document they own gets a new owner** (`company-brain:governance`). Find them with `rg -l "owner: \"\[\[<Name>\]\]\""`.
+
+## Output
+
+1. `📄 **Created:**` links first, then the lines added or updated per note.
+2. Anything flagged to the brain owner (private data found, a missing owner).
+3. `brain log people "<name>"`, then `brain sync "crm: <name>"`.

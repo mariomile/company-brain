@@ -3,17 +3,64 @@
   "title": "company-brain configuration (_system/brain.config.json)",
   "type": "object",
   "properties": {
-    "company": {"type": "string", "description": "Display name of the company"},
-    "language": {"type": "string", "description": "Language of new notes (BCP 47, e.g. en, it)"},
-    "root_allowlist": {"type": "array", "items": {"type": "string"}, "description": "Files allowed at the root of the brain"},
-    "readonly": {"type": "array", "items": {"type": "string"}, "description": "Globs the guard refuses to write: synced sources, raw folders, the archive"},
-    "living_docs": {"type": "array", "items": {"type": "string"}, "description": "Globs of notes that must carry owner and review_due"},
-    "review_cadence_days": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}, "description": "Days between verifications per type/* tag"},
-    "moc_threshold": {"type": "integer", "minimum": 1},
-    "input_knowledge_ratio_warn": {"type": "number", "minimum": 0},
-    "max_rules": {"type": "integer", "minimum": 1},
-    "max_agent_memory_lines": {"type": "integer", "minimum": 1},
-    "secret_patterns": {"type": "array", "items": {"type": "string"}, "description": "Regular expressions; prefix (?i) for case-insensitive"}
+    "company": {
+      "type": "string",
+      "description": "Display name of the company"
+    },
+    "language": {
+      "type": "string",
+      "description": "Language of new notes (BCP 47, e.g. en, it)"
+    },
+    "root_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Files allowed at the root of the brain"
+    },
+    "readonly": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Globs of synced or imported sources the guard refuses to write (.archive/ is always move-only, not listed here)"
+    },
+    "living_docs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Globs of notes that must carry owner and review_due"
+    },
+    "review_cadence_days": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "description": "Days between verifications per type/* tag"
+    },
+    "moc_threshold": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "input_knowledge_ratio_warn": {
+      "type": "number",
+      "minimum": 0
+    },
+    "max_rules": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "secret_patterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Regular expressions; prefix (?i) for case-insensitive"
+    }
   },
-  "required": ["company"]
+  "required": [
+    "company"
+  ]
 }

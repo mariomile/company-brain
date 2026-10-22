@@ -8,7 +8,7 @@ The brain's own `_system/object-schema.md` is canonical. This copy exists so a s
 
 ## Governance block
 
-`owner: "[[Person]]"`, `review_due: YYYY-MM-DD`, `last_verified: YYYY-MM-DD` on `type/living`, `playbook`, `policy`, `project`, `goal`, and indices. Cadences: living 90, playbook 180, policy 365, project 14, goal 90, index 30, `NOW.md` 14.
+`owner: "[[Person]]"`, `review_due: YYYY-MM-DD`, `last_verified: YYYY-MM-DD` on `type/living`, `playbook`, `policy`, `project`, `goal`. Cadences: living 90, playbook 180, policy 365, project 14, goal 90, `NOW.md` 14. `last_verified` is set at creation, then only by the owner (`brain verify`). Generated indices carry no governance. `sample: true` marks the template's fictional notes. Status values per type: one table in the brain's `_system/object-schema.md`.
 
 ## Per type, the properties that views and checks rely on
 

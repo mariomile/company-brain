@@ -11,7 +11,7 @@
       "name": "company-brain",
       "source": "./",
       "description": "Capture, minutes, decisions, ask with citations, health checks, weekly review and governance for a company brain built from the template.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "productivity",
       "tags": [
         "knowledge-base",

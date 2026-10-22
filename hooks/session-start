@@ -2,13 +2,16 @@
 # SessionStart hook for the company-brain plugin. Emits one JSON object with additionalContext.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Only speak when the working directory is a company brain.
-if [ ! -f "_system/brain.config.json" ] || [ ! -f "AGENTS.md" ]; then
-  exit 0
-fi
+# Only speak when the working directory is inside a company brain (walk up to its root).
+BRAIN_ROOT="$PWD"
+while [ ! -f "$BRAIN_ROOT/_system/brain.config.json" ]; do
+  [ "$BRAIN_ROOT" = "/" ] && exit 0
+  BRAIN_ROOT="$(dirname "$BRAIN_ROOT")"
+done
+[ -f "$BRAIN_ROOT/AGENTS.md" ] || exit 0
 
 hub_content=$(cat "${PLUGIN_ROOT}/skills/using-company-brain/SKILL.md")
 
@@ -39,8 +42,8 @@ if command -v node >/dev/null 2>&1; then
   script_command="node $(shell_quote "${PLUGIN_ROOT}/scripts/brain.mjs")"
   session_context+="
 
-**Brain script:** \`${script_command}\`. Subcommands: brief, health [--json] [--strict], stale, links, orphans, tags, ratio, index, new <type> \"Title\", verify <note>, log <op> <title>, run <automation>, search <query>, guard, lint-file."
-  if brief_out=$(node "${PLUGIN_ROOT}/scripts/brain.mjs" brief 2>&1); then
+**Brain script:** \`${script_command}\`. Run it from the brain root (${BRAIN_ROOT}). Subcommands: brief, health, stale, links, orphans, tags, ratio, index, new <type> \"Title\", verify <note>, log <op> <title> [--result], search <query>, metrics, samples, sync [message], run <automation>, scope <automation>."
+  if brief_out=$(node "${PLUGIN_ROOT}/scripts/brain.mjs" brief --root "$BRAIN_ROOT" 2>&1); then
     session_context+="
 
 **Brain briefing:**
@@ -52,6 +55,10 @@ ${brief_out}"
 **Brain briefing unavailable:** ${brief_out}
 Read _system/agent/NOW.md and _system/memory/open-loops.md before working; do not infer state from a failed briefing."
   fi
+else
+  session_context+="
+
+**Node.js is not installed.** The brain script, the briefing and the guard need it: the guard blocks every file write in this brain until Node 18 or newer is installed (https://nodejs.org). Tell the person this first, in one line, before anything else."
 fi
 
 context_json=$(escape_for_json "$session_context")

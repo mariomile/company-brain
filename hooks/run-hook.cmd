@@ -10,6 +10,8 @@ if "%~1"=="" (
 )
 
 set "HOOK_DIR=%~dp0"
+REM bash wants forward slashes
+set "HOOK_DIR=%HOOK_DIR:\=/%"
 
 if exist "C:\Program Files\Git\bin\bash.exe" (
     "C:\Program Files\Git\bin\bash.exe" "%HOOK_DIR%%~1" %2 %3 %4 %5 %6 %7 %8 %9
@@ -26,6 +28,7 @@ if %ERRORLEVEL% equ 0 (
     exit /b %ERRORLEVEL%
 )
 
+echo company-brain: Git Bash not found, hooks are off. Install Git for Windows. >&2
 exit /b 0
 CMDBLOCK
 

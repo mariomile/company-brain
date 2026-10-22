@@ -1,42 +1,51 @@
 ---
 name: brief
-description: "Use for 'brief', 'what is on today', 'what is open', Monday morning, or before a meeting: today's meetings with context, loops due, stale living documents, what needs processing, the top priorities from NOW.md. Reads only; writes a report."
+description: "Use for 'brief', 'what is on today', 'what is open', Monday morning, or before a meeting: today's meetings with context, loops due, stale living documents, proposals and proposed decisions waiting for a person, what needs processing, the top priorities from NOW.md. Reads only; writes a report."
 argument-hint: "[today|tomorrow|week] [person]"
 ---
 
 # Brief
 
-Short, readable on a phone, true. At most 40 lines. The brief writes nothing in the brain except its own report.
+Short, readable on a phone, true. At most 40 lines, in the brain's language. The brief writes nothing in the brain except its own report.
 
-## Sources, in order
+## 1. Gather, in order
 
-1. `brain brief`: health, stale living documents, loops due, inbox counts, last review, NOW staleness.
-2. `_system/agent/NOW.md`: priorities. Order everything else by these.
-3. Calendar and mail of the last 24 hours if a calendar or mail source is connected in this session. Not connected: one line saying so, move on.
-4. Today's and yesterday's daily notes in `Journal/Daily/`, including `## Agents`.
-5. For each meeting today: the project note's `## Now` and the last minutes of that project.
+1. `brain brief`: health, stale living documents, loops due, inbox count, proposed decisions, open proposals, last review, NOW staleness.
+2. `_system/agent/NOW.md`: the priorities. Order everything else by them. If it still has `{{placeholders}}`, say so and point to `onboard`.
+3. Calendar and mail of the last 24 hours, if this session has a calendar or mail connector. None: one line saying so.
+4. Today's and yesterday's `Journal/Daily/` notes, including `## Agents`.
+5. Each meeting today: the project note's `## Now` and the last minutes of that project.
 6. `_system/memory/open-loops.md`: `resurface` today or past, `due` within 3 days, by owner.
 7. `brain stale`: living documents past due, with owner.
-8. Synced meetings without minutes; files in `_inbox/`; `_system/memory/inbox/` not empty; decisions `proposed`.
+8. Waiting for a person: proposals in `_system/reports/proposals/` with `status: open` (owner, age), decisions with `status: proposed` (decider, age), files in `_inbox/`, meetings synced yesterday without minutes.
 
-## Shape
+Ignore `sample: true` notes: they are the template's fictional company.
+
+## 2. Shape
 
 ```
 # Brief YYYY-MM-DD
 ## Today
-- 10:00 Weekly product sync · [[Onboarding Redesign]]: guided funnel at 10% ships 24 Oct; open: share prompt before or after first funnel
+- 10:00 Weekly product sync · [[Project]]: one line of context
 ## Open
-- [[Ben Okafor]]: walk Jane Doe through the new flow (loop, due 24 Oct)
+- [[Person]]: the loop (due DD Mon)
 ## Stale
-- [[Product]]: 12 days past review, owner [[Ben Okafor]]: "verify Product"
-## To process
-- 2 meetings without minutes: "minutes of ..." · 3 files in _inbox/: "triage the inbox"
+- [[Product]]: 12 days past review, owner [[Person]]: "verify Product"
+## Waiting for a person
+- Proposal [[2026-W42 review]]: 9 days, owner [[Person]]
+- Decision [[2026-10-20 Short title]]: proposed 2 days ago, decider [[Person]]
+- 2 meetings without minutes · 3 files in _inbox/
 ## Priorities (NOW.md)
 1. ...
 ```
 
-For a person: filter loops, stale documents and meetings to what they own or attend.
+For a person: filter loops, stale documents, proposals and meetings to what they own, decide or attend.
 
-## Deliver
+## 3. Deliver
 
-Write `_system/reports/briefs/YYYY-MM-DD.md` and show it. On a scheduled run, append one line under `## Agents` in today's daily note (create the daily from `_system/templates/Daily.md` if missing). If a source was unavailable, say so in one line. Never invent a meeting, a deadline or a number.
+1. Write `_system/reports/briefs/YYYY-MM-DD.md` and show it.
+2. Scheduled run (`morning-brief` automation, `report` mode): also one line under `## Agents` in today's daily note (create it with `brain new daily` if missing). Nothing else.
+
+## Output
+
+The brief itself. If a source was unavailable, one line saying which. Never invent a meeting, a deadline or a number. `brain log brief "YYYY-MM-DD"`.

@@ -2,7 +2,7 @@
 
 The Claude Code plugin that keeps a company brain true. A company brain is a Markdown repository built from the [company-brain template](https://github.com/mariomile/company-brain-template): the shared memory of an organization that people and AI agents read before they work and write back to after.
 
-The plugin gives every agent working in that repository the same method: how to capture, how to write minutes and decisions, how to answer with citations, how to keep living documents verified, how to review the week, and what it must never do. A guard hook enforces the hard rules; a script measures health; six agents and six automations run the routines.
+The plugin gives every agent working in that repository the same method: how to capture, how to write minutes and decisions, how to answer with citations, how to keep living documents verified, how to review the week, and what it must never do. A guard hook enforces the hard rules; a script measures health and use; six agents and six scheduled automations run the routines.
 
 ## Install
 
@@ -11,9 +11,11 @@ The plugin gives every agent working in that repository the same method: how to 
 /plugin install company-brain@company-brain
 ```
 
-Development: `claude --plugin-dir /path/to/company-brain` from a brain folder. Validate with `claude plugin validate .`; test with `bash tests/run.sh`.
+Requires Node.js 18 or newer: the guard, the lint and the script run on it. Inside a brain, if Node is missing, the guard blocks writes and says why instead of switching itself off.
 
-The plugin is silent outside a company brain (it looks for `_system/brain.config.json`).
+Development: `claude --plugin-dir /path/to/company-brain` from a brain folder. Validate with `claude plugin validate .`; test with `bash tests/run.sh` (104 checks against a copy of the template); evals in `evals/`.
+
+The plugin is silent outside a company brain (it walks up looking for `_system/brain.config.json`).
 
 ## What it does
 
@@ -32,11 +34,12 @@ The plugin is silent outside a company brain (it looks for `_system/brain.config
 | `review` | the Friday review: numbers, what the brain learned, what is stale, five proposals |
 | `brief` | the morning brief |
 | `governance` | verify a living document, owners, confidentiality, PRs, the autonomy ladder, structure changes |
-| `onboard` | fill a fresh brain by interview; onboard a teammate with a reading path |
+| `onboard` | fill a fresh brain from the company's own material (site, deck, docs) plus about ten confirmations; onboard a teammate with a reading path |
+| `ingest` | pull new material from the sources in `_system/sources.md` (Slack, Drive, Notion, the meeting recorder), or a one-time export, into `Input/` |
 
 Agents: `brain-triager`, `brain-scribe`, `brain-librarian`, `brain-curator`, `brain-analyst`, `brain-onboarder`.
 
-Hooks: session start (briefing), pre-write guard (root, archive, read-only sources, secrets, contract files), post-write lint (frontmatter and links advice).
+Hooks: session start (briefing), pre-write guard (root, archive, `.git`, read-only sources, secrets, contract and agent-config files; fails closed), post-write lint (frontmatter and links advice). The guard sees file tools, not shell commands.
 
 ## The script
 
@@ -49,16 +52,19 @@ stale | links | orphans | tags | ratio
 index [--write]          regenerate the indices
 new <type> "Title"       scaffold a note from the brain's templates
 verify <note> --by "[[Owner]]"
-log <op> "title"         append to _system/log.md
+log <op> "title" [--result answered|partial|gap|stale]   append to _system/log.md
 run <automation>         print an automation's full prompt for any scheduler
+scope <automation>       after a run: fail if anything changed outside its scope
 search "query"           index-first search
-metrics                  the weekly numbers
+metrics                  the weekly numbers, with questions answered and gaps
+samples [--archive]      list or archive the template's sample notes
+sync ["message"]         commit, pull --rebase, push
 guard | lint-file        the hooks (stdin JSON)
 ```
 
 ## How the brain grows
 
-Capture → compile → query → promote → maintain → verify → review → measure. Automations climb an autonomy ladder (`report` → `propose` → `act`) one step at a time. The health check runs on every pull request. The weekly review proposes, people accept. Details: `references/autonomy-ladder.md` and the template's `_system/Brain Blueprint.md`.
+Ingest → capture → compile → query → promote → maintain → verify → review → measure. Automations climb an autonomy ladder (`report` → `propose` → `act`) one step at a time; the template's GitHub workflow runs them on schedule and lands their output as an issue comment or a pull request. The health check runs on every pull request. The weekly review proposes, people accept. Details: `references/autonomy-ladder.md` and the template's `_system/Brain Blueprint.md`.
 
 ## Portability
 

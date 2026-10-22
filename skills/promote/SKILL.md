@@ -21,17 +21,22 @@ Load `company-brain:conventions`.
 
 ## How
 
-1. Concept: `brain new concept "Title" --domain <domain>`. One-sentence definition, what it is, why it matters here, evidence from this company with sources, `source:` the input it came from, `up:` the MOC. The input note gets a line "Promoted to [[Concept]] on YYYY-MM-DD".
+1. Concept: `brain new concept "Title" --domain <domain> --source "[[Input note]]"`. One-sentence definition, what it is, why it matters here, evidence from this company with sources, `up:` the MOC. The input note gets a line "Promoted to [[Concept]] on YYYY-MM-DD", unless it is read-only (`readonly` in `_system/brain.config.json`): then the concept's `source:` is the only link.
 2. Glossary: one row in `Knowledge/Company/Glossary.md` (term, meaning here, note). The Glossary is a living document: a new row is a small addition; a changed meaning is a proposal to the owner.
 3. MOC: `Knowledge/<Domain>/_MOC <Domain>.md`, sections by theme, two to five links each with a half-line of why. Add `up:` to the MOC on the notes it indexes. Never alphabetical.
-4. Playbook: `brain new playbook "Title" --owner "[[Person]]" --domain <domain>`; steps, done-when, failure modes; the minutes as `source:`.
+4. Playbook: it changes how the team works, so it goes to its owner. Draft it (`brain new playbook "Title" --owner "Person" --domain <domain> --source "[[minutes]]"`: steps, done-when, failure modes) on a branch with a pull request, or as a proposal in `_system/reports/proposals/` (`status: open`, `owner:`, `date:`).
 
 ## Do not
 
 - Move the original. Promotion duplicates meaning, not files.
 - Promote one-off inputs. Two citations or two questions is the bar.
+- Promote from `sample: true` notes: they are the template's fictional company, not evidence.
 - Create a concept without evidence from this company; otherwise it is a reference, and it stays in `Input/Research/`.
 
-## Close
+## Output
 
-`📄 **Created:**` links, then the ratio before and after (`brain ratio`). `brain log promote "<what>"`. The weekly review reports promotion candidates; this skill executes them.
+1. `📄 **Created:**` links first, then proposals with their owner.
+2. The ratio before and after (`brain ratio`).
+3. `brain log promote "<what>"`, then `brain sync "promote: <what>"`.
+
+The weekly review reports promotion candidates; this skill executes them.

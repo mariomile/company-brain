@@ -1,55 +1,57 @@
 ---
 name: onboard
-description: "Use on the first session in a brain still carrying template placeholders, when the team wants to fill or refresh ORG, NOW and the living documents, or to onboard a new teammate with a reading path. Interviews one question at a time, writes the instance, archives the sample notes."
+description: "Use on the first session in a brain still carrying template placeholders, when the team wants to fill or refresh ORG, NOW and the living documents, or to onboard a new teammate with a reading path. Starts from the company's own material, drafts everything with sources, then asks about ten confirm-or-fix questions."
 argument-hint: "[--teammate \"Name\"] [--refresh]"
 ---
 
 # Onboard
 
-Two jobs: fill the instance (the brain's identity and living documents) and onboard a person (a reading path through what exists).
+Two jobs: fill the instance from the company's own material, and onboard a person. With good material the first takes about twenty minutes; from scratch, longer.
 
-Load `company-brain:conventions`. Read what exists first; ask only to confirm or correct.
+Load `company-brain:conventions`. Notes with `sample: true` (Lumen Analytics) are the template's example: never a source.
 
 ## A. Fill the instance
 
-Goal: after 30 to 45 minutes an agent knows what the company is, who the people are, what matters now, and how the team wants to work. The sample company (Lumen Analytics) is replaced and archived.
+### 1. Ask for material, then read it
 
-### How to interview
+One message: "Give me whatever exists: the website URL, a pitch deck, a docs folder, a Notion or Drive export, the team list." Take what comes; do not interview yet.
 
-- One question at a time; wait for the answer.
-- Read `_system/agent/ORG.md`, `NOW.md`, `Knowledge/Company/*.md` first: ask "is this right?" for what is filled, ask fresh for `{{placeholders}}`.
-- Accept long, disordered, dictated answers; distill them.
-- Every 4 or 5 answers, show what you understood in 3 lines and check.
+Read all of it: web fetch for URLs, file tools for folders and decks, the connectors this session has (Notion, Drive, Slack) for what lives there. An export goes under `_inbox/import-YYYY-MM-DD/` and through `company-brain:ingest` in import mode afterwards; for now read it, do not file it.
 
-### Blocks
+### 2. Draft, every fact with a source
 
-1. **Company**: what it does, for whom, stage, size, founded, where; the one number the company watches; what it deliberately does not do. → `Company.md`, `ORG.md`.
-2. **Product**: what it does today, plans, what is being built, the areas (become `product/*` tags). → `Product.md`, `_tags.md` Tier 2.
-3. **Customers**: who buys and why, segments (become `customer/*` tags), top churn reason, the three biggest accounts. → `Customers.md`, `CRM/Companies/`.
-4. **People**: the team, roles, who reports to whom, who owns what in the brain (Company, Product, Customers, How We Work, Glossary, Decisions, the domains). → `CRM/People/` with `crm/team`, `ORG.md`, `CODEOWNERS` placeholders listed for the person to fill.
-5. **Now**: the two or three outcomes of the quarter, the active projects with owners, recurring rituals, risks. → `NOW.md`, `Active/Projects/` (one note each via `brain new project`), `Active/Goals/`.
-6. **Decisions already taken**: the three to five decisions that explain why things are the way they are. → `Decisions/` via `company-brain:decide`, dated when they were taken.
-7. **How we work**: rituals, tools, where meetings, mail and chat live (which become synced or connected sources), language of the brain. → `How We Work.md`, `_system/brain.config.json` (`company`, `language`, `readonly`).
-8. **Terms**: five to ten words with a specific meaning here. → `Glossary.md`.
-9. **What agents must never get wrong**: names, numbers, claims. → `ORG.md`, last section.
+Write directly: filling `{{placeholders}}` is not a rewrite, and the owners confirm in step 3. Every fact line ends with `[source: <URL, file or "chat YYYY-MM-DD">; since: YYYY-MM-DD]`. What the material does not say stays `to verify`.
 
-### Write
+- `_system/agent/ORG.md`: what the company does, for whom, stage, size, the people who own something, how decisions are made, what agents must never get wrong.
+- `_system/agent/NOW.md`: the quarter's outcomes, active projects in priority order, risks.
+- The five living documents in `Knowledge/Company/`: `Company`, `Product`, `Customers`, `How We Work`, `Glossary`, with `owner`, `review_due` (today plus cadence) and `last_verified` today.
+- The team in `CRM/People/` (`brain new person "Name" --company "Company"`, tag `crm/team`, `reports_to`), the main customers and partners in `CRM/Companies/`.
+- Current projects: `brain new project "Name" --owner "Person"`.
+- Decisions already taken: `brain new decision "Title" --owner "Decider" --date YYYY-MM-DD --source "<where it is written>"`, `status: proposed` until step 3 confirms them.
+- Product areas and segments as `product/*` and `customer/*` rows in `_system/_tags.md`.
 
-- Replace every `{{placeholder}}` in `AGENTS.md`, `CLAUDE.md`, `_system/**`, `CODEOWNERS` (owners as `@handle` placeholders remain for the person: say so).
-- Set `owner`, `review_due` (today plus cadence), `last_verified` today on the living documents, since the owner just confirmed them.
-- Archive the sample notes to `.archive/samples/` (Ada Rossi, Ben Okafor, Jane Doe, Lumen Analytics, Northwind Logistics, Onboarding Redesign, the two sample decisions, the sample meeting, feedback, concept, MOC, daily, goal) unless the team wants to keep one as an example; fix the links that pointed to them.
-- `brain index --write`, `brain health`: it should be green except for `CODEOWNERS` handles.
-- Close the `fill-the-instance` loop in `open-loops.md`. `brain log init "instance filled"`.
+### 3. Confirm or fix: about ten questions, one at a time
 
-### Close
+Each question shows what you drafted and asks "right, or what is different?". Wait for the answer, apply it, then the next. Cover, in order: what the company does and for whom; stage, size, the one number it watches; the product today; who buys and why; the team and who owns which document; the quarter's priorities; the active projects and their owners; the decisions you found (accept, fix or drop each); how the team works and where meetings, chat and docs live; what agents must never get wrong. Skip any question the material already answered unambiguously.
 
-Show the person: the five living documents (links), the team, the projects, the decisions, what is still `to verify`, and the three things to do next: fill `CODEOWNERS` and enable Code Owner review on main; enable the morning brief automation; run `verify` on one document in two weeks to learn the flow.
+### 4. Finish
+
+1. Fill the remaining placeholders: `AGENTS.md`, `CLAUDE.md`, `company` and `language` in `_system/brain.config.json`, the `CODEOWNERS` handles (ask for the GitHub handles; leave `@{{...}}` and say so if unknown), and the `_system/sources.md` rows for the sources they use (connector, destination, owner, `paused` until they turn ingest on), plus the scope per source (channels, folders, pages).
+2. Once the real notes exist: `brain samples --archive`, then `brain links` and fix real notes that still point at a sample.
+3. `brain index --write`, `brain health`: no errors; name each remaining warning and whose it is.
+4. Close the `fill-the-instance` loop in `_system/memory/open-loops.md`. `brain log onboard "instance filled"`, then `brain sync "onboarding"`.
 
 ## B. Onboard a teammate
 
 `--teammate "Name"`:
 
-1. Create or update their person note (`company-brain:people`, `crm/team`, `reports_to`).
-2. Read their role and the projects they join. Produce `Output/Onboarding <Name>.md` (`#type/output`): a reading path in order: `Company`, `How We Work`, `Glossary`; then `Product` and `Customers` if relevant; the project notes they join with their last three Timeline entries; the decisions that explain their area (from the decisions index, by domain); the people they will work with; the playbooks of their role.
-3. Open loops: "Name reads the path by <date>", "Name's manager verifies NOW with them", owner the manager.
-4. Add them to `ORG.md`'s people table and, if they own anything, to `CODEOWNERS` (placeholder for the handle).
+1. Their person note (`company-brain:people`, `crm/team`, `reports_to`).
+2. `Output/Onboarding <Name>.md` (`#type/output`): a reading path in order: `Company`, `How We Work`, `Glossary`; `Product` and `Customers` if relevant; the project notes they join with their last three Timeline entries; the decisions of their area (decisions index, by domain); the people they will work with; the playbooks of their role.
+3. Open loops: "Name reads the path by <date>", "Name's manager walks NOW.md with them", owner the manager.
+4. If they own anything: propose them for `ORG.md`'s people table and `CODEOWNERS` to the brain owner. `brain sync "onboard <Name>"`.
+
+## Output
+
+1. `📄 **Created:**` links first: living documents, people, projects, decisions.
+2. What is still `to verify`, and whose it is.
+3. Next three steps: fill the `CODEOWNERS` handles (owners then review pull requests on living documents and contracts; day-to-day notes keep going straight to main); turn on the `morning-brief` automation; in two weeks, `verify` one living document with its owner to learn the flow.

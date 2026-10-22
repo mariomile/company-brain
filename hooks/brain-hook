@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Runs a brain.mjs hook subcommand (guard, lint-file). If Node is missing inside a
+# company brain, the guard fails closed: it blocks the write and says why.
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SUB="${1:-}"
+
+in_brain() {
+  local dir="$PWD"
+  while :; do
+    [ -f "$dir/_system/brain.config.json" ] && return 0
+    [ "$dir" = "/" ] || [ -z "$dir" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+if ! command -v node >/dev/null 2>&1; then
+  if [ "$SUB" = "guard" ] && in_brain; then
+    echo "company-brain: Node.js is not installed, so the guard cannot check this write and blocked it. Install Node 18 or newer (https://nodejs.org), then retry." >&2
+    exit 2
+  fi
+  exit 0
+fi
+exec node "$HOOK_DIR/../scripts/brain.mjs" "$@"

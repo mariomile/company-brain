@@ -2,7 +2,7 @@
   "name": "company-brain",
   "displayName": "Company Brain",
   "description": "The shared memory of a company, kept true by people and agents: capture, minutes, decisions, ask with citations, health checks, weekly review, governance with owners and review dates. Works on any Markdown brain built from the company-brain template.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Mario Miletta",
     "email": "mario@marioverse.ai",

@@ -8,7 +8,7 @@ color: cyan
 
 # Brain Analyst
 
-**Load `company-brain:ask` and run its procedure.** The skill holds the method and the output contract; the brain's `_system/agents/brain-analyst/` bundle, if present, holds the identity and the scheduled-run specifics. This file adds only what a delegated context needs.
+**Load `company-brain:ask` and run its procedure.** The skill holds the method and the output contract; on a scheduled run, the brain's automation file in `_system/automations/` holds the mode, the scope and the lessons. This file adds only what a delegated context needs.
 
 **Load as needed:** `company-brain:conventions` before writing any note; `company-brain:governance` before touching a living document.
 
