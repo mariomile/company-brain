@@ -11,6 +11,11 @@
       "type": "string",
       "description": "Language of new notes (BCP 47, e.g. en, it)"
     },
+    "sharing": {
+      "type": "string",
+      "enum": ["", "local", "github"],
+      "description": "Where the brain lives: local (one machine; brain sync commits only, routines run with brain routine) or github (shared repository; routines run on GitHub Actions). Empty until setup chooses."
+    },
     "root_allowlist": {
       "type": "array",
       "items": {

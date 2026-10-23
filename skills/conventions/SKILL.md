@@ -24,6 +24,7 @@ The brain's own rule is `_system/memory/rules/rule-writing-notes.md`; the schema
 
 - **Wikilink on the first mention** of a person, company, project, decision, concept. Inline, never a trailer list. `[[Note|text]]` when the words differ.
 - **Fact lines:** one fact per line, provenance at the end: `- <fact> [source: <note, URL or "chat YYYY-MM-DD">; since: YYYY-MM-DD]`.
+- **Origins a teammate can find.** A meeting: `Granola "Title" YYYY-MM-DD`, or the minutes `[[YYYY-MM-DD Title]]` once they exist. A repository: `repo <name>: <path>`. A document only one person holds: `doc "Title" (Owner, YYYY-MM-DD)`, so others know whom to ask. A person's word: `[[Person]], YYYY-MM-DD`. Never a path on someone's machine.
 - **A changed fact** stays on its line: `<new> (since YYYY-MM-DD; before: <old>)`.
 - **A status that updates** is one line you replace, never one line per check.
 - **Entity notes** (people, companies, projects, living documents): current truth on top, `## Timeline` below, newest first.

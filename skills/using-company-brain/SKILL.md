@@ -9,6 +9,8 @@ The brain's own `AGENTS.md` is the contract. This skill routes; the brain's file
 
 **Boot (cold, nothing injected):** `AGENTS.md`; `_system/agent/SOUL.md`, `ORG.md`, `NOW.md`; `_system/memory/rules/_index.md` (open a rule only when its trigger matches); on a scheduled run, your file in `_system/automations/`; the project note you work on. With the session-start briefing, skip what it already gave you.
 
+**Not set up yet:** when the briefing says `Setup: N step(s) left`, offer `setup` once before other work. It is the person's call; if they decline, do the request.
+
 ## Route
 
 | People say | Skill |
@@ -25,7 +27,8 @@ The brain's own `AGENTS.md` is the contract. This skill routes; the brain's file
 | "verify X", "is this still true", owners, autonomy, a structure change | `governance` |
 | "brief", "what is on today" | `brief` |
 | "weekly review", "what did the brain learn" | `review` |
-| first session, `{{placeholders}}`, "onboard", a new teammate | `onboard` |
+| first session, "Setup: N step(s) left" in the briefing, "set up", "connect Granola / Slack", "turn on the routines", "share the brain" | `setup` |
+| `{{placeholders}}` to fill, "onboard", a new teammate | `onboard` |
 | any writing | `conventions`, alongside |
 
 Skills are `company-brain:<name>`. A one-lookup question needs no ceremony: look up, cite, answer, log.

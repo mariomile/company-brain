@@ -30,7 +30,7 @@ The librarian's procedure. The script measures; the model judges; nobody deletes
 | decisions proposed over 14 days | no: name the decider |
 | domains over the MOC threshold, Input:Knowledge above the warn ratio | no: `company-brain:promote` |
 | duplicate frontmatter keys (a merge kept both sides) | no: read both; the note's owner decides when unsure |
-| placeholders left | no: `company-brain:onboard` |
+| placeholders left | no: `company-brain:setup` |
 | sample notes still live | no: `brain samples --archive` once the real notes exist, with the person |
 
 ## 3. Fix only what is safe

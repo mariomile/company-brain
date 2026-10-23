@@ -11,7 +11,7 @@ Short, readable on a phone, true. At most 40 lines, in the brain's language. The
 ## 1. Gather, in order
 
 1. `brain brief`: health, stale living documents, loops due, inbox count, proposed decisions, open proposals, last review, NOW staleness.
-2. `_system/agent/NOW.md`: the priorities. Order everything else by them. If it still has `{{placeholders}}`, say so and point to `onboard`.
+2. `_system/agent/NOW.md`: the priorities. Order everything else by them. If it still has `{{placeholders}}`, say so and point to `setup`.
 3. Calendar and mail of the last 24 hours, if this session has a calendar or mail connector. None: one line saying so.
 4. Today's and yesterday's `Journal/Daily/` notes, including `## Agents`.
 5. Each meeting today: the project note's `## Now` and the last minutes of that project.

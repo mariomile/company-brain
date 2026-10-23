@@ -13,7 +13,7 @@ The plugin gives every agent working in that repository the same method: how to 
 
 Requires Node.js 18 or newer: the guard, the lint and the script run on it. Inside a brain, if Node is missing, the guard blocks writes and says why instead of switching itself off.
 
-Development: `claude --plugin-dir /path/to/company-brain` from a brain folder. Validate with `claude plugin validate .`; test with `bash tests/run.sh` (104 checks against a copy of the template); evals in `evals/`.
+Development: `claude --plugin-dir /path/to/company-brain` from a brain folder. Validate with `claude plugin validate .`; test with `bash tests/run.sh` (checks against a copy of the template); evals in `evals/`.
 
 The plugin is silent outside a company brain (it walks up looking for `_system/brain.config.json`).
 
@@ -34,7 +34,8 @@ The plugin is silent outside a company brain (it walks up looking for `_system/b
 | `review` | the Friday review: numbers, what the brain learned, what is stale, five proposals |
 | `brief` | the morning brief |
 | `governance` | verify a living document, owners, confidentiality, PRs, the autonomy ladder, structure changes |
-| `onboard` | fill a fresh brain from the company's own material (site, deck, docs) plus about ten confirmations; onboard a teammate with a reading path |
+| `setup` | the first thing in a new brain, and safe to re-run: where it lives (this machine or GitHub), onboarding, input sources (the meeting recorder first), routines (the morning brief first), owners, health |
+| `onboard` | fill a fresh brain from the company's own material (site, deck, docs) plus about ten confirmations; onboard a teammate with a reading path. Scales to a whole vault, repo and meeting archive: dossier, parallel writers, integration |
 | `ingest` | pull new material from the sources in `_system/sources.md` (Slack, Drive, Notion, the meeting recorder), or a one-time export, into `Input/` |
 
 Agents: `brain-triager`, `brain-scribe`, `brain-librarian`, `brain-curator`, `brain-analyst`, `brain-onboarder`.
@@ -58,13 +59,15 @@ scope <automation>       after a run: fail if anything changed outside its scope
 search "query"           index-first search
 metrics                  the weekly numbers, with questions answered and gaps
 samples [--archive]      list or archive the template's sample notes
-sync ["message"]         commit, pull --rebase, push
+sync ["message"]         commit, pull --rebase, push (commit only when sharing is local or there is no remote)
+setup [--json]           the setup checklist: done, left, next step
+routine <automation>     run an automation here with Claude Code, check its scope, commit locally; --cron prints the crontab line (--install adds it), --dry-run shows what would run; a failed run holds the routines until brain sync
 guard | lint-file        the hooks (stdin JSON)
 ```
 
 ## How the brain grows
 
-Ingest → capture → compile → query → promote → maintain → verify → review → measure. Automations climb an autonomy ladder (`report` → `propose` → `act`) one step at a time; the template's GitHub workflow runs them on schedule and lands their output as an issue comment or a pull request. The health check runs on every pull request. The weekly review proposes, people accept. Details: `references/autonomy-ladder.md` and the template's `_system/Brain Blueprint.md`.
+Ingest → capture → compile → query → promote → maintain → verify → review → measure. Automations climb an autonomy ladder (`report` → `propose` → `act`) one step at a time; they run on this machine with `brain routine` and cron, or on GitHub with the template's workflow, which lands their output as an issue comment or a pull request. The health check runs on every pull request. The weekly review proposes, people accept. Details: `references/autonomy-ladder.md` and the template's `_system/Brain Blueprint.md`.
 
 ## Portability
 

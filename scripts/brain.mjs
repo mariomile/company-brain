@@ -18,6 +18,9 @@
 //   node brain.mjs samples [--archive]         list the template's sample notes, or move them to .archive/
 //   node brain.mjs sync ["message"] [--pull]   pull --rebase, commit everything in the brain, push
 //   node brain.mjs scope <automation>          after a run: list uncommitted changes outside the automation's scope; exit 1 if any
+//   node brain.mjs setup [--json]              setup checklist: what is done, what is left, the next step
+//   node brain.mjs routine <automation> [--dry-run] [--cron [--install]] [--scheduled]   run an automation here with Claude Code, check the scope, commit locally;
+//                                              --cron prints the crontab line (--install adds it), --scheduled skips a disabled automation
 //   node brain.mjs guard                       PreToolUse hook (stdin JSON): refuse root files, archive edits, read-only edits, secrets
 //   node brain.mjs lint-file                   PostToolUse hook (stdin JSON): frontmatter advice on the written note
 //
@@ -26,9 +29,11 @@
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
+import os from 'os';
+import { fileURLToPath } from 'url';
 
 // ---------- args ----------
-const BOOL_FLAGS = new Set(['--json', '--strict', '--write', '--force', '--archive', '--pull']);
+const BOOL_FLAGS = new Set(['--json', '--strict', '--write', '--force', '--archive', '--pull', '--dry-run', '--cron', '--install', '--scheduled']);
 const argv0 = process.argv.slice(2);
 const ri = argv0.indexOf('--root');
 const ROOT_OPT = ri >= 0 ? argv0[ri + 1] : undefined;
@@ -61,7 +66,7 @@ const addDays = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
 
 // ---------- config ----------
 const DEFAULT_CONFIG = {
-  company: 'Company', language: 'en',
+  company: 'Company', language: 'en', sharing: '',
   root_allowlist: ['AGENTS.md', 'CLAUDE.md', 'README.md', 'CODEOWNERS', 'LICENSE'],
   readonly: ['Input/Meetings/Granola/**', 'Input/**/Raw/**'],
   living_docs: ['Knowledge/Company/**', 'Resources/Playbooks/**', 'Resources/Policies/**', 'Active/Projects/*/*.md', 'Active/Goals/**'],
@@ -469,7 +474,10 @@ function brief() {
   if (fs.existsSync(weekly)) { const w = fs.readdirSync(weekly).filter((f) => /^\d{4}-W\d{2}\.md$/.test(f)).sort().pop(); lines.push(`Last weekly review: ${w ? w.replace('.md', '') : 'none yet'}`); }
   try { const fm = parseFrontmatter(read('_system/agent/NOW.md')).fm; const left = daysUntil(fm.review_due); if (left != null && left < 0) lines.push(`NOW.md is ${-left} day(s) past its review: verify with its owner before relying on it`); } catch {}
   if (r.warnings.length) lines.push(`Attention: ${r.warnings.slice(0, 4).join('; ')}`);
-  if (r.placeholders.length) lines.push('This brain still has template placeholders: run the onboard skill.');
+  const held = readHold();
+  if (held) lines.push(`Routine held: ${held} Review with git status; brain sync releases it.`);
+  const st = setupStatus(r);
+  if (st.left.length) lines.push(`Setup: ${st.left.length} step(s) left, next: ${st.left[0].label}. Offer the setup skill (company-brain:setup) before other work.`);
   return lines.join('\n');
 }
 
@@ -552,6 +560,7 @@ function newCmd() {
   if (!type || !TEMPLATE_BY_TYPE[type]) fail(`usage: brain new <${Object.keys(TEMPLATE_BY_TYPE).join('|')}> "Title"`);
   if (!title && !['daily', 'weekly'].includes(type)) fail('a title is required');
   if (title && (BAD_TITLE.test(title) || title.startsWith('.'))) fail(`"${title}" cannot be a note title: it may not start with a dot or contain \\ / : * ? " < > | # ^ [ ]. They break links or file names.`);
+  if (/\.md$/i.test(title)) fail(`"${title}" cannot be a note title: it ends in .md, so the file would be "${title}.md" and links to it break. Drop the extension or reword it (for example "file CLAUDE").`);
   const date = opt('--date') || today();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) fail('--date must be YYYY-MM-DD');
   const tpl = path.join(ROOT, '_system/templates', TEMPLATE_BY_TYPE[type] + '.md');
@@ -664,12 +673,17 @@ function readLog(days) {
 }
 
 // ---------- run (automation prompt) ----------
-function runCmd() {
-  const name = positional()[0];
-  if (!name || BAD_TITLE.test(name)) fail('usage: brain run <automation>');
-  const p = path.join(ROOT, '_system/automations', `${name}.md`);
+function automationFile(name, usage) {
+  if (!name || BAD_TITLE.test(name)) fail(usage);
+  const dir = path.join(ROOT, '_system/automations');
+  if (!fs.existsSync(dir)) fail('no _system/automations/ folder in this brain.');
+  const p = path.join(dir, `${name}.md`);
   if (!fs.existsSync(p)) fail(`automation not found: ${name}. Available: ${fs.readdirSync(path.join(ROOT, '_system/automations')).filter((f) => f.endsWith('.md') && f !== 'README.md').map((f) => f.slice(0, -3)).join(', ')}`);
-  const { fm, body } = parseFrontmatter(fs.readFileSync(p, 'utf8'));
+  return parseFrontmatter(fs.readFileSync(p, 'utf8'));
+}
+function runCmd() { console.log(runPrompt(positional()[0], 'usage: brain run <automation>')); }
+function runPrompt(name, usage) {
+  const { fm, body } = automationFile(name, usage);
   const mode = ['report', 'propose', 'act'].includes(fm.mode) ? fm.mode : 'report';
   const scope = asList(fm.scope);
   const modeText = {
@@ -677,7 +691,7 @@ function runCmd() {
     propose: 'write proposals to _system/reports/proposals/ (frontmatter `status: open`, `owner:` the person who decides, `date:`), the files the automation names, and one run line in today\'s daily note under ## Agents. Change nothing else.',
     act: 'apply changes only inside the scope globs, then one line in _system/log.md and one run line in today\'s daily note under ## Agents.',
   }[mode];
-  console.log(`# Automation: ${fm.name || name}\nMode: ${mode} · Enabled: ${fm.enabled} · When: ${asList(fm.when).join(', ')}\nScope (files this run may write): ${scope.length ? scope.join(', ') : 'the report only'}\n\nYou are running unattended, with nobody to answer questions. Mode "${mode}": ${modeText}\nFollow AGENTS.md. Never invent. Never delete a file. Do not commit or push: the scheduler that runs you checks the scope (brain scope ${name}) and decides how changes land.\n\n---\n\n${body.trim()}`);
+  return (`# Automation: ${fm.name || name}\nMode: ${mode} · Enabled: ${fm.enabled} · When: ${asList(fm.when).join(', ')}\nScope (files this run may write): ${scope.length ? scope.join(', ') : 'the report only'}\n\nYou are running unattended, with nobody to answer questions. Mode "${mode}": ${modeText}\nFollow AGENTS.md. Never invent. Never delete a file. Do not commit or push: the scheduler that runs you checks the scope (brain scope ${name}) and decides how changes land.\n\n---\n\n${body.trim()}`);
 }
 
 // ---------- search ----------
@@ -774,8 +788,10 @@ function samplesCmd() {
 function syncCmd() {
   if (!gitRun(['rev-parse', '--is-inside-work-tree']).ok) fail('Not a git repository: nothing to sync. The brain works without git; sharing it needs git.');
   const remote = git(['remote']).trim().split('\n')[0];
+  const local = CFG.sharing === 'local';
   const conflictHelp = 'Resolve it: `git status` lists the notes in conflict. Keep both sides\' facts (the newest verified one wins, the other becomes a dated "before:" trace), `git add` them, `git rebase --continue`, then run brain sync again.';
   if (flag('--pull')) {
+    if (local) return console.log('sharing is local: nothing to pull.');
     if (!remote) return console.log('No remote: nothing to pull.');
     const pull = gitRun(['pull', '--rebase', '--autostash']);
     if (!pull.ok) fail(`git pull --rebase failed:\n${(pull.err || pull.out).trim()}\n${conflictHelp}`);
@@ -789,6 +805,8 @@ function syncCmd() {
     const c = gitRun(['commit', '-m', msg]); if (!c.ok) fail(`git commit failed:\n${(c.err || c.out).trim()}`);
     console.log(`Committed: ${msg}`);
   } else console.log('Nothing to commit.');
+  clearHold();
+  if (local) return console.log('sharing is local: the commit stays on this machine, nothing pushed.');
   if (!remote) return console.log('No remote configured: the commit stays on this machine.');
   const pull = gitRun(['pull', '--rebase']);
   if (!pull.ok) fail(`git pull --rebase failed:\n${(pull.err || pull.out).trim()}\n${conflictHelp}`);
@@ -801,11 +819,15 @@ function syncCmd() {
 const ALWAYS_WRITABLE = ['_system/reports/**', '_system/log.md', 'Journal/Daily/**'];
 function scopeCmd() {
   const name = positional()[0];
-  if (!name || BAD_TITLE.test(name)) fail('usage: brain scope <automation>');
-  const p = path.join(ROOT, '_system/automations', `${name}.md`);
-  if (!fs.existsSync(p)) fail(`automation not found: ${name}`);
+  const { mode, allowed, changed, bad } = scopeCheck(name, 'usage: brain scope <automation>');
+  if (flag('--json')) console.log(JSON.stringify({ automation: name, mode, allowed, changed, outside: bad }, null, 2));
+  else if (!bad.length) console.log(`${changed.length} changed file(s), all inside the scope of ${name} (${mode}): ${allowed.join(', ')}`);
+  else console.log(`Outside the scope of ${name} (${mode}; allowed: ${allowed.join(', ')}):\n${bad.map((b) => `  ${b.st} ${b.f}${b.st.includes('D') ? '  (deleted: never allowed)' : ''}`).join('\n')}`);
+  if (bad.length) process.exit(1);
+}
+function scopeCheck(name, usage) {
+  const { fm } = automationFile(name, usage);
   if (!gitRun(['rev-parse', '--is-inside-work-tree']).ok) fail('brain scope needs a git repository: it compares the working tree with the last commit.');
-  const { fm } = parseFrontmatter(fs.readFileSync(p, 'utf8'));
   const mode = ['report', 'propose', 'act'].includes(fm.mode) ? fm.mode : 'report';
   const allowed = [...ALWAYS_WRITABLE, ...(mode === 'report' ? [] : asList(fm.scope).map(String))];
   const prefix = git(['rev-parse', '--show-prefix']).trim();
@@ -818,10 +840,137 @@ function scopeCmd() {
     changed.push({ st: st.trim(), f });
   }
   const bad = changed.filter((c) => c.st.includes('D') || !matchesAny(c.f, allowed));
-  if (flag('--json')) console.log(JSON.stringify({ automation: name, mode, allowed, changed, outside: bad }, null, 2));
-  else if (!bad.length) console.log(`${changed.length} changed file(s), all inside the scope of ${name} (${mode}): ${allowed.join(', ')}`);
-  else console.log(`Outside the scope of ${name} (${mode}; allowed: ${allowed.join(', ')}):\n${bad.map((b) => `  ${b.st} ${b.f}${b.st.includes('D') ? '  (deleted: never allowed)' : ''}`).join('\n')}`);
-  if (bad.length) process.exit(1);
+  return { fm, mode, allowed, changed, bad };
+}
+
+// ---------- setup ----------
+function sourcesTable() {
+  let t = ''; try { t = read('_system/sources.md'); } catch { return []; }
+  const lines = stripNonContent(t).split('\n').map((l) => l.trim());
+  const first = lines.findIndex((l) => l.startsWith('|'));
+  if (first < 0) return [];
+  let last = first; while (last + 1 < lines.length && lines[last + 1].startsWith('|')) last++;
+  const rows = lines.slice(first, last + 1).map((l) => l.replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map((c) => c.trim()));
+  if (!rows.length) return [];
+  const head = rows[0].map((h) => h.toLowerCase());
+  const si = head.indexOf('status'), ni = Math.max(0, head.indexOf('source'));
+  if (si < 0) return [];
+  return rows.slice(1).filter((c) => !/^:?-+:?$/.test(c[0] || '')).map((c) => ({ name: c[ni], status: (c[si] || '').toLowerCase().replace(/[^a-z]/g, '') }));
+}
+function automationList() {
+  const dir = path.join(ROOT, '_system/automations');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md').map((f) => {
+    const { fm } = parseFrontmatter(fs.readFileSync(path.join(dir, f), 'utf8'));
+    return { name: f.slice(0, -3), enabled: String(fm.enabled) === 'true' };
+  });
+}
+function setupStatus(r = health()) {
+  const isGit = gitRun(['rev-parse', '--is-inside-work-tree']).ok;
+  const remote = isGit ? git(['remote']).trim().split('\n')[0] : '';
+  const settingsFiles = [path.join(ROOT, '.claude/settings.json'), path.join(ROOT, '.claude/settings.local.json'), path.join(os.homedir(), '.claude/settings.json')];
+  const enabledIn = settingsFiles.find((f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8'))?.enabledPlugins?.['company-brain@company-brain'] === true; } catch { return false; } });
+  const pluginOn = !!enabledIn;
+  const sharing = String(CFG.sharing || ''), company = String(CFG.company || '');
+  const src = sourcesTable(), active = src.filter((x) => x.status.startsWith('active'));
+  const on = automationList().filter((a) => a.enabled);
+  let owners = ''; try { owners = fs.readFileSync(path.join(ROOT, 'CODEOWNERS'), 'utf8'); } catch {}
+  const ph = r.placeholders.filter((x) => x.rel !== '_system/sources.md'); // unused source rows may keep theirs
+  const steps = [
+    { id: 'node', label: 'Node 18 or newer', done: parseInt(process.versions.node, 10) >= 18, detail: `Node ${process.versions.node}` },
+    { id: 'git', label: 'the brain is a git repository', done: isGit, detail: isGit ? 'yes' : 'not yet: git init' },
+    { id: 'plugin', label: 'the plugin is enabled for this project', done: pluginOn, detail: pluginOn ? (enabledIn.startsWith(ROOT) ? path.relative(ROOT, enabledIn) : '~/.claude/settings.json') : 'no settings file enables company-brain@company-brain' },
+    { id: 'sharing', label: 'where the brain lives: on this machine or on GitHub', done: sharing === 'local' || (sharing === 'github' && !!remote), detail: sharing === 'github' && !remote ? 'github, but no remote yet' : sharing || 'not chosen (sharing in _system/brain.config.json)' },
+    { id: 'identity', label: 'company name and language', done: !!company && company !== 'Company' && !company.includes('{{'), detail: `${company || 'none'} · ${CFG.language}` },
+    { id: 'onboard', label: 'ORG, NOW and the living documents filled', done: !ph.length, detail: ph.length ? `${ph.length} note(s) with {{placeholders}}` : 'no placeholders left' },
+    { id: 'samples', label: 'the template\'s sample notes archived', done: !r.samples.length, detail: r.samples.length ? `${r.samples.length} still live` : 'none live' },
+    { id: 'sources', label: 'at least one input source active (the meeting recorder first)', done: active.length > 0, detail: active.length ? active.map((x) => x.name).join(', ') : `${src.length} source(s) in _system/sources.md, all paused` },
+    { id: 'routines', label: 'at least one routine on (the morning brief first)', done: on.length > 0, detail: on.length ? on.map((a) => a.name).join(', ') : 'every automation is disabled' },
+  ];
+  if (sharing === 'github') steps.push({ id: 'codeowners', label: 'CODEOWNERS handles filled', done: !!owners && !owners.includes('{{'), detail: !owners ? 'no CODEOWNERS' : owners.includes('{{') ? 'placeholders left' : 'filled' });
+  steps.push({ id: 'health', label: 'health without errors', done: r.status !== 'error', detail: r.status });
+  return { steps, left: steps.filter((x) => !x.done) };
+}
+function setupCmd() {
+  const st = setupStatus();
+  if (flag('--json')) return console.log(JSON.stringify(st, null, 2));
+  const lines = [`# Setup of the ${CFG.company} brain: ${st.steps.length - st.left.length} of ${st.steps.length} steps done`, ''];
+  for (const x of st.steps) lines.push(`${x.done ? '✓' : '✗'} ${x.label}: ${x.detail}`);
+  lines.push('', st.left.length ? `Next: ${st.left[0].label}. The setup skill (company-brain:setup) walks every step.` : 'Setup complete.');
+  console.log(lines.join('\n'));
+}
+
+// ---------- routine (an automation run on this machine) ----------
+const ROUTINE_TOOLS = 'Read,Glob,Grep,Write,Edit,MultiEdit,Bash(node:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*)';
+function cronFor(when) {
+  const m = String(when).trim().toLowerCase().match(/^(daily|weekdays|weekly (mon|tue|wed|thu|fri|sat|sun))\s+(\d{1,2}):(\d{2})$/);
+  if (!m || +m[3] > 23 || +m[4] > 59) return null;
+  const dow = m[1] === 'daily' ? '*' : m[1] === 'weekdays' ? '1-5' : String(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].indexOf(m[2]));
+  return `${+m[4]} ${+m[3]} * * ${dow}`;
+}
+function findOnPath(bin) { for (const d of (process.env.PATH || '').split(path.delimiter)) { if (d && fs.existsSync(path.join(d, bin))) return path.join(d, bin); } return null; }
+// a run that failed or left its scope holds the routines until a person looks: the next run must not commit its leftovers
+function holdFile() { const d = gitRun(['rev-parse', '--absolute-git-dir']); return d.ok ? path.join(d.out.trim(), 'company-brain-routine-held') : null; }
+function readHold() { const f = holdFile(); try { return f && fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim() : null; } catch { return null; } }
+function clearHold() { const f = holdFile(); try { if (f && fs.existsSync(f)) fs.unlinkSync(f); } catch {} }
+function holdAndFail(msg) {
+  if (git(['status', '--porcelain', '--', '.']).trim()) { const f = holdFile(); if (f) fs.writeFileSync(f, `${stampNow()} ${msg.split('\n')[0]}\n`); }
+  fail(`${msg}\nRoutines are held until a person reviews the changes (git status) and runs brain sync.`);
+}
+function cronLines(name, fm, claudeBin) {
+  // the marketplace clone keeps its path across plugin updates; the versioned cache does not
+  const stable = path.join(os.homedir(), '.claude/plugins/marketplaces/company-brain/scripts/brain.mjs');
+  const script = fs.existsSync(stable) ? stable : fileURLToPath(import.meta.url);
+  const q = (v) => `'${String(v).replace(/'/g, `'\\''`)}'`;
+  const logDir = path.join(os.homedir(), '.company-brain', 'logs');
+  const pathDirs = [...new Set([path.dirname(process.execPath), claudeBin && path.dirname(claudeBin), '/usr/local/bin', '/usr/bin', '/bin'].filter(Boolean))].join(':');
+  const times = asList(fm.when).map(cronFor);
+  if (!times.length || times.some((t) => !t)) fail(`when: ${asList(fm.when).join(', ') || '(empty)'} does not translate to cron. Use "daily HH:MM", "weekdays HH:MM" or "weekly Mon HH:MM", or write the crontab line by hand.`);
+  const marker = `# company-brain ${ROOT} ${name}`;
+  // cron reads an unescaped % as a newline
+  return { marker, lines: times.map((t) => `${t} mkdir -p ${q(logDir)} && cd ${q(ROOT)} && PATH=${q(pathDirs)} ${q(process.execPath)} ${q(script)} routine ${name} --scheduled >> ${q(path.join(logDir, path.basename(ROOT) + '.log'))} 2>&1 ${marker}`.replace(/%/g, '\\%')) };
+}
+function routineCmd() {
+  const name = positional()[0];
+  const usage = 'usage: brain routine <automation> [--dry-run] [--cron [--install]] [--scheduled]';
+  const { fm } = automationFile(name, usage);
+  const claudeBin = process.env.BRAIN_CLAUDE_BIN || findOnPath('claude');
+  if (flag('--cron')) {
+    const { marker, lines } = cronLines(name, fm, claudeBin);
+    if (!claudeBin) console.error('warning: claude is not on PATH here; the line assumes it will be.');
+    if (!flag('--install')) return console.log(lines.join('\n'));
+    const crontab = process.env.BRAIN_CRONTAB_BIN || 'crontab';
+    const cur = spawnSync(crontab, ['-l'], { encoding: 'utf8' });
+    if (cur.error) fail(`cannot run ${crontab}: ${cur.error.message}`);
+    const kept = (cur.status === 0 ? cur.stdout : '').split('\n').filter((l) => l.trim() && !l.replace(/\\%/g, '%').endsWith(marker));
+    const put = spawnSync(crontab, ['-'], { input: [...kept, ...lines].join('\n') + '\n', encoding: 'utf8' });
+    if (put.status !== 0) fail(`crontab refused the new table: ${(put.stderr || '').trim()}`);
+    appendLog('routine', `${name} scheduled: ${lines.map((l) => l.split(' ').slice(0, 5).join(' ')).join('; ')}`, 'brain-routine');
+    return console.log(`Scheduled ${name} (${lines.length} line(s), local time). Replaces any earlier line for it; other crontab lines are kept.\n${lines.join('\n')}`);
+  }
+  if (flag('--scheduled') && String(fm.enabled) !== 'true') return console.log(`[${stampNow()}] ${name}: enabled is not true in its file, skipped.`);
+  if (!gitRun(['rev-parse', '--is-inside-work-tree']).ok) fail('brain routine needs a git repository: the scope check compares the run with the last commit.');
+  const held = readHold();
+  if (held) fail(`[${stampNow()}] ${name}: routines are held since ${held}\nReview the changes with git status, keep what is right, revert the rest, then brain sync releases the hold.`);
+  if (!git(['config', 'user.email']).trim() || !git(['config', 'user.name']).trim()) fail('git has no user.name or user.email here: set them (git config user.name / user.email) so the routine can commit.');
+  const prompt = runPrompt(name, usage);
+  if (flag('--dry-run')) return console.log(`Would run in ${ROOT}:\n  ${claudeBin || 'claude (not on PATH)'} -p "<brain run ${name}>" --max-turns 40 --allowedTools "${ROUTINE_TOOLS}"\nthen brain scope ${name}, then a local commit "brain: ${name} ${today()}". Nothing is pushed.`);
+  if (!claudeBin) fail('claude is not on PATH: install Claude Code (https://code.claude.com) or set BRAIN_CLAUDE_BIN.');
+  // what people left uncommitted is theirs: commit it first, so the scope check sees only this run
+  if (git(['status', '--porcelain', '--', '.']).trim()) {
+    const a = gitRun(['add', '-A', '--', '.']), c = a.ok && gitRun(['commit', '-m', `brain: changes before the ${name} routine`]);
+    if (!a.ok || !c.ok) fail(`could not commit the changes already in the brain:\n${a.ok ? (c.err || c.out).trim() : a.err.trim()}`);
+  }
+  console.log(`[${stampNow()}] ${name}: running`);
+  const run = spawnSync(claudeBin, ['-p', prompt, '--max-turns', '40', '--allowedTools', ROUTINE_TOOLS], { cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'], timeout: 30 * 60 * 1000 });
+  if (run.status !== 0) holdAndFail(`[${stampNow()}] ${name}: claude stopped (${run.error ? run.error.message : run.signal || 'exit ' + run.status}). Changes, if any, are left uncommitted.`);
+  const { mode, bad, changed } = scopeCheck(name, usage);
+  if (bad.length) holdAndFail(`[${stampNow()}] ${name}: changes outside the scope of ${mode} mode, nothing committed:\n${bad.map((x) => `  ${x.st} ${x.f}`).join('\n')}`);
+  if (!changed.length) return console.log(`[${stampNow()}] ${name}: nothing changed.`);
+  appendLog('routine', `${name} (${mode}): ${changed.length} file(s)`, 'brain-routine');
+  const add = gitRun(['add', '-A', '--', '.']); if (!add.ok) fail(add.err);
+  const c = gitRun(['commit', '-m', `brain: ${name} ${today()}`]); if (!c.ok) fail(`git commit failed:\n${(c.err || c.out).trim()}`);
+  console.log(`[${stampNow()}] ${name}: committed ${changed.length} file(s) on this machine.${CFG.sharing === 'local' ? '' : ' brain sync shares them if the brain has a remote.'}`);
 }
 
 // ---------- hooks ----------
@@ -962,6 +1111,8 @@ switch (cmd) {
   case 'samples': requireRoot(); samplesCmd(); break;
   case 'sync': requireRoot(); syncCmd(); break;
   case 'scope': requireRoot(); scopeCmd(); break;
+  case 'setup': requireRoot(); setupCmd(); break;
+  case 'routine': requireRoot(); routineCmd(); break;
   default:
     console.log(fs.readFileSync(new URL(import.meta.url)).toString().split('\n').filter((l) => l.startsWith('//')).map((l) => l.slice(3)).join('\n'));
     process.exit(cmd ? 1 : 0);

@@ -42,7 +42,7 @@ if command -v node >/dev/null 2>&1; then
   script_command="node $(shell_quote "${PLUGIN_ROOT}/scripts/brain.mjs")"
   session_context+="
 
-**Brain script:** \`${script_command}\`. Run it from the brain root (${BRAIN_ROOT}). Subcommands: brief, health, stale, links, orphans, tags, ratio, index, new <type> \"Title\", verify <note>, log <op> <title> [--result], search <query>, metrics, samples, sync [message], run <automation>, scope <automation>."
+**Brain script:** \`${script_command}\`. Run it from the brain root (${BRAIN_ROOT}). Subcommands: brief, health, stale, links, orphans, tags, ratio, index, new <type> \"Title\", verify <note>, log <op> <title> [--result], search <query>, metrics, samples, sync [message], run <automation>, scope <automation>, setup, routine <automation>."
   if brief_out=$(node "${PLUGIN_ROOT}/scripts/brain.mjs" brief --root "$BRAIN_ROOT" 2>&1); then
     session_context+="
 
